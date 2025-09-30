@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UIElements;
 
 
@@ -34,7 +35,7 @@ public class GameInputManager : MonoBehaviour
         //PRESIONA N ENTRA MODO PASE
         if (Input.GetKeyDown(KeyCode.N))
         {
-            Transform unitWithBall = BallManager.Instance.GetCurrentBallHolder(); // Necesitarás este método
+            Transform unitWithBall = BallManager.Instance.GetCurrentBallHolder(); 
             if (unitWithBall != null)
             {
                 isPassing = true;
@@ -45,8 +46,6 @@ public class GameInputManager : MonoBehaviour
             {
                 MyDebug.Log("Ningún jugador tiene el balón actualmente.");
             }
-
-
         }
          if (Input.GetKeyDown(KeyCode.T))
         {
@@ -68,6 +67,9 @@ public class GameInputManager : MonoBehaviour
      
         if (Input.GetMouseButtonDown(0))
         {
+            // 🚨 Si el click está sobre UI, salimos y no procesamos raycast 
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) { return; }
+
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
@@ -103,7 +105,9 @@ public class GameInputManager : MonoBehaviour
                             UnitController receiverID = clickedUnit.GetComponent<UnitController>();
                             MyDebug.Log($"{passSource.GetComponent<PlayerActionQueue>().playerID} pasara a. {receiverID.GetComponent<PlayerActionQueue>().playerID}");
 
-                            passerAccion.QueueAction(new PassAction(passSource, receiverID.transform));
+                            // passerAccion.QueueAction(new PassAction(passSource, receiverID.transform));
+                              receiverID.HighlightSelection(Color.cyan);
+                             PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
 
 
                             isPassing = false;
@@ -136,7 +140,6 @@ public class GameInputManager : MonoBehaviour
             unitController.HighlightSelection(Color.green);
         }
 
-
        // path.Clear();
 
     }
@@ -151,9 +154,7 @@ public class GameInputManager : MonoBehaviour
         if (actionQueue != null)
         {
             // Guarda el camino en el jugador
-          actionQueue.QueueAction(new MoveAction(player, path));
-        
-           
+          actionQueue.QueueAction(new MoveAction(player, path)); 
         }
         else
         {

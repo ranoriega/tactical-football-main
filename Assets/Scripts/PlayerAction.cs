@@ -7,7 +7,12 @@ public abstract class PlayerAction
     public Transform player;
     public abstract void Execute();
 }
-
+public enum PassType
+{
+    Ground,   // pase raso
+    High,     // pase bombeado / alzado
+    Through   // pase filtrado (opcional para después)
+}
 public class MoveAction : PlayerAction
 {
     public List<Node> path;
@@ -34,17 +39,19 @@ public class MoveAction : PlayerAction
 public class PassAction : PlayerAction
 {
     public Transform target;
+    public PassType passType;
 
-    public PassAction(Transform player, Transform target)
+    public PassAction(Transform player, Transform target, PassType type = PassType.Ground)
     {
         this.player = player;
         this.target = target;
+        this.passType = type;
     }
 
     public override void Execute()
     {
         // El pase lo maneja el ActionQueue
-        BallManager.Instance.PassBallTo(target);
+        BallManager.Instance.PassBallTo(target, passType);
     }
 }
 

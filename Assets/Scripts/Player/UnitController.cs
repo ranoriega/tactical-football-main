@@ -5,21 +5,20 @@ using UnityEngine;
 
 public class UnitController : MonoBehaviour
 {
-        private Renderer rend;
-    private Color originalColor;
+    private Renderer rend;
+   
 
      private Coroutine moveRoutine;
+     private PlayerTeam team;
     [SerializeField] float movementSpeed = 1f;
     List<Node> path = new List<Node>();
     public Vector3 initialPosition;  // posición de spawn original
     GridManager gridManager;
       private void Awake()
     {
-        rend = GetComponentInChildren<Renderer>();
-        if (rend != null)
-        {
-            originalColor = rend.material.color; // guardamos el color inicial
-        }
+       rend = GetComponentInChildren<Renderer>();
+       team = GetComponent<PlayerTeam>();
+
     }
 
 
@@ -37,7 +36,8 @@ public class UnitController : MonoBehaviour
     }
      public void HighlightSelection(Color c)
     {
-        if (rend != null)
+     
+        if (rend != null && rend.material.color != Color.cyan )
         {
             rend.material.color = c;
         }
@@ -47,7 +47,7 @@ public class UnitController : MonoBehaviour
     {
         if (rend != null)
         {
-            rend.material.color = originalColor;
+            rend.material.color = team.OriginalColor;
         }
     }
 

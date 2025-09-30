@@ -10,8 +10,9 @@ public class ShotIntent
     public Transform goalCenter;
 
     public Vector3 offset;
-    
+
 }
+
 public class PlayerActionQueue : MonoBehaviour
 {
 

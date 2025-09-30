@@ -4,14 +4,16 @@ using UnityEngine;
 public class PlayerSpawner : MonoBehaviour, IGameSystem
 {
     public static PlayerSpawner Instance;
+    private Renderer rend;
     [SerializeField] GameObject playerPrefab;
     [SerializeField] GameObject opponentPrefab; // Prefab equipo 2
     [SerializeField] GridManager gridManager;
     [SerializeField] Vector2Int[] spawnPositions;
     [SerializeField] Vector2Int[] spawnPositions2;
-      [SerializeField] Color opponentColor = Color.blue; // Puedes cambiarlo desde el Inspector
+    [SerializeField] Color opponentColor = Color.blue; // Puedes cambiarlo desde el Inspector
+    [SerializeField] Color playerColor = Color.red; // Puedes cambiarlo desde el Inspector
+    
     public Transform lastSpawnedPlayer; // ← Esto será el jugador del centro
-
     // Declaramos un evento sin parámetros
     public event Action OnReady;
 
@@ -42,14 +44,18 @@ public class PlayerSpawner : MonoBehaviour, IGameSystem
             {
                 TurnManager.Instance.centerPlayerHuman = player.GetComponent<UnitController>();
             }
-
-
-
+            
             PlayerTeam team = player.GetComponent<PlayerTeam>();
             if (team != null)
             {
                 team.teamID = 1; // ← Este es el equipo local
-                 team.initialCoordinates = pos;
+                team.initialCoordinates = pos;
+                rend = player.GetComponentInChildren<Renderer>();
+                if (rend != null)
+                {
+                    team.OriginalColor = rend.material.color; // guardamos el color inicial
+                }
+        
             }
             // Asignar ID único al jugador
             UnitController unitCtrl = player.GetComponent<UnitController>();
@@ -121,7 +127,8 @@ public class PlayerSpawner : MonoBehaviour, IGameSystem
             if (team != null)
             {
                 team.teamID = 2; // ← Este es el equipo del oponente
-                 team.initialCoordinates = pos;
+                team.initialCoordinates = pos;
+                team.OriginalColor = opponentColor;
             }
          
         }
