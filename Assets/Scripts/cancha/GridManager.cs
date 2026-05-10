@@ -12,9 +12,14 @@ public class GridManager : MonoBehaviour
 
     Dictionary<Vector2Int, Node> grid = new Dictionary<Vector2Int, Node>();
     public Dictionary<Vector2Int, Node> Grid { get { return grid; } }
+public static GridManager Instance { get; private set; }
 
     private void Awake()
     {
+        if (Instance != null && Instance != this) Destroy(gameObject);
+    else Instance = this;
+
+
         CreateGrid();
     }
 

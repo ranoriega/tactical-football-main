@@ -36,52 +36,40 @@ public class PlayerActionQueue : MonoBehaviour
          queuedAction.Enqueue(action); // ✅ agrega al final de la cola
     }
      // Ejecutar la siguiente acción de la cola
-    public void ExecuteNextAction(Action onComplete)
+ public void ExecuteNextAction(Action onComplete)
+{
+    if (queuedAction.Count == 0)
     {
-        if (queuedAction.Count == 0)
-        {
-            onComplete?.Invoke();
-            return;
-        }
-
-        PlayerAction action = queuedAction.Dequeue();
-
-        if (action is MoveAction move)
-        {
-          
-            if (move != null)
-                move.ExecuteWithCallback(() =>
-                {
-                    // Al terminar movimiento, seguimos con la siguiente acción
-                    ExecuteNextAction(onComplete);
-                });
-        }
-        else
-        {
-            // Para PassAction o ShootAction
-            action.Execute();
-            ExecuteNextAction(onComplete); // ejecuta la siguiente acción inmediatamente
-        }
+        onComplete?.Invoke();
+        return;
     }
+
+    PlayerAction action = queuedAction.Dequeue();
+
+    action.ExecuteWithCallback(() =>
+    {
+        ExecuteNextAction(onComplete);
+    });
+}
 
     public void ClearAction()
     {
         queuedAction.Clear();
     }
 
+    
+
+
+
     public void SetMoveTarget(List<Node> coordinates)
     {
         coordinates1?.Clear();
         coordinates1 = new List<Node>(coordinates);
 
-       // string pathStr = string.Join(" -> ", coordinates1.ConvertAll(n => n.cords.ToString()));
-      //  MyDebug.Log($"Camino guardado: {pathStr}");
-
-
     }
 
   
-    public void RegisterShot(Transform shooter, Vector3 trayectoryShot)
+    public void RegisterShot(Transform shooter, Vector3 trayectoryShot, Transform goalcenter)
     {
         if (shooter == null)
         {
@@ -93,23 +81,14 @@ public class PlayerActionQueue : MonoBehaviour
         pendingShot = new ShotIntent
         {
             shooter = shooter,
-            goalCenter = GetOpponentGoal(shooterID),
+            goalCenter =goalcenter,
             offset = trayectoryShot
 
         };
-
-       
-    
     }
 
       public Transform GetOpponentGoal(int shooterID)
-    {
-        Goal[] allGoals = FindObjectsByType<Goal>(FindObjectsSortMode.None);
-        foreach (Goal goal in allGoals)
-        {
-            if (goal.teamID != shooterID) // Buscar portería del oponente
-            {
-                
+    {           
                   Transform  goalCenter = GoalSpawner.Instance.GetOpponentGoalCenter(shooterID);
                 if (goalCenter == null)
                 {
@@ -117,9 +96,7 @@ public class PlayerActionQueue : MonoBehaviour
                     return null;
                 }
                 return goalCenter.transform;
-            }
-        }
-        return null;
+    
     }
 
     public void QueuePass(Transform receiver)

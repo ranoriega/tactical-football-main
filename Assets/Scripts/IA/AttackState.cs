@@ -17,7 +17,7 @@ public class AttackState : IState
         if (ai.CanShootToGoal())
         {
             MyDebug.Log(ai.name + " decide disparar");
-            ai.ShootToGoal();
+            // ai.ShootToGoal();
             return;
         }
 

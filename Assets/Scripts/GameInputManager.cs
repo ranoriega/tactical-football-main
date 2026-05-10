@@ -16,57 +16,61 @@ public class GameInputManager : MonoBehaviour
     public bool isPassing = false;
     public Transform passSource = null;
 
-
-    List<Node> path = new List<Node>();
-
     GridManager gridManager;
     Pathfinding pathFinder;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Awake()
+    {
+        if (Instance != null && Instance != this) Destroy(gameObject);
+        else Instance = this;
+    }
+
+
     void Start()
     {
-        gridManager = FindAnyObjectByType<GridManager>();
-        pathFinder = FindAnyObjectByType<Pathfinding>();
+      gridManager = GridManager.Instance;
+        pathFinder = Pathfinding.Instance; 
     }
+
 
     // Update is called once per frame
 
     void Update()
     {
+        
         //PRESIONA N ENTRA MODO PASE
         if (Input.GetKeyDown(KeyCode.N))
         {
+              PassUI.Instance.OpenModeMenu();
             Transform unitWithBall = BallManager.Instance.GetCurrentBallHolder(); 
             if (unitWithBall != null)
             {
                 isPassing = true;
                 passSource = unitWithBall;
-                MyDebug.Log($"{passSource.GetComponent<PlayerActionQueue>().playerID} entró en modo pase. Selecciona un jugador para recibir.");
+              
             }
             else
             {
                 MyDebug.Log("Ningún jugador tiene el balón actualmente.");
             }
         }
-         if (Input.GetKeyDown(KeyCode.T))
+        if (Input.GetKeyDown(KeyCode.T))
         {
-          
-            if (Input.GetKeyDown(KeyCode.T))
+            var holder = BallManager.Instance.currentHolder;
+            if (holder != null)
             {
-                var holder = BallManager.Instance.currentHolder;
-                if (holder != null)
-                {
-                        ShotUI.Instance.OpenShotMenu(holder);         
-                }
-                else
-                {
-                    MyDebug.LogWarning("No hay jugador con balón para abrir el menú de tiro.");
-                }
-            }     
+                ShotUI.Instance.OpenShotMenu(holder);
+            }
+            else
+            {
+                MyDebug.LogWarning("No hay jugador con balón para abrir el menú de tiro.");
+            }
         }
 
      
         if (Input.GetMouseButtonDown(0))
         {
+      
             // 🚨 Si el click está sobre UI, salimos y no procesamos raycast 
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) { return; }
 
@@ -95,6 +99,7 @@ public class GameInputManager : MonoBehaviour
                 else if (hit.transform.CompareTag("Unit"))
                 {
                     Transform clickedUnit = hit.transform;
+                    
                     if (isPassing)
                     {
 
@@ -103,13 +108,13 @@ public class GameInputManager : MonoBehaviour
                         {
                             PlayerActionQueue passerAccion = passSource.GetComponent<PlayerActionQueue>();
                             UnitController receiverID = clickedUnit.GetComponent<UnitController>();
+                             PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
                             MyDebug.Log($"{passSource.GetComponent<PlayerActionQueue>().playerID} pasara a. {receiverID.GetComponent<PlayerActionQueue>().playerID}");
 
-                            // passerAccion.QueueAction(new PassAction(passSource, receiverID.transform));
-                              receiverID.HighlightSelection(Color.cyan);
-                             PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
+                            receiverID.HighlightSelection(Color.cyan);
+                           
 
-
+                            
                             isPassing = false;
                             passSource = null;
                         }
@@ -151,6 +156,7 @@ public class GameInputManager : MonoBehaviour
 
         // Obtiene el componente PlayerActionQueue del jugador
         PlayerActionQueue actionQueue = player.GetComponent<PlayerActionQueue>();
+       
         if (actionQueue != null)
         {
             // Guarda el camino en el jugador
@@ -160,6 +166,8 @@ public class GameInputManager : MonoBehaviour
         {
             MyDebug.LogWarning($"El jugador {player.name} no tiene PlayerActionQueue.");
         }
+     
+
     }
 
 

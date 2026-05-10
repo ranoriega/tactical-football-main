@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
+
 
 public class UnitController : MonoBehaviour
 {
@@ -56,29 +58,94 @@ public class UnitController : MonoBehaviour
     // PATH ES EL CAMINO A RECORRER 
     public void StartFollowingPath(Transform unit, List<Node> path, System.Action onFinish)
     {
-        // Si ya estaba corriendo, la paramos antes de iniciar otra
-        if (moveRoutine != null)
-            StopCoroutine(moveRoutine);
+        // 🔹 Cancela cualquier tween previo del jugador
+        unit.DOKill(); // Esto detiene cualquier movimiento DOTween en ese transform
 
-        moveRoutine = StartCoroutine(FollowPath(unit, path, onFinish));
+        // 🔹 Llama al nuevo método DOTween para recorrer el path
+        float totalTime = 0.3f * path.Count; // ajusta según velocidad deseada
+        FollowPathDOTween(unit, path, totalTime, onFinish);
     }
 
-   public void StopMoving(Transform unit)
-{
-    if (moveRoutine != null)
+
+    // public void StartFollowingPath(Transform unit, List<Node> path, System.Action onFinish)
+    // {
+    //     // Si ya estaba corriendo, la paramos antes de iniciar otra
+    //     if (moveRoutine != null)
+    //         StopCoroutine(moveRoutine);
+
+    //     moveRoutine = StartCoroutine(FollowPath2(unit, path, onFinish));
+    // }
+
+    public void StopMoving(Transform unit)
     {
-        StopCoroutine(moveRoutine);
-        moveRoutine = null;
+        // Detiene cualquier movimiento DOTween en este jugador
+        unit.DOKill();
+
+        // ✅ Libera la casilla actual al cancelar el movimiento
+        Vector2Int currentCoords = gridManager.GetCoordinatesFromPosition(unit.position);
+        Node currentNode = gridManager.GetNode(currentCoords);
+        if (currentNode != null)
+            currentNode.walkable = true;
     }
 
-    // ✅ Libera la casilla actual al cancelar el movimiento
-    Vector2Int currentCoords = gridManager.GetCoordinatesFromPosition(unit.position);
-    Node currentNode = gridManager.GetNode(currentCoords);
-    if (currentNode != null)
-        currentNode.walkable = true;
+    // public void StopMoving(Transform unit)
+    // {
+    //     if (moveRoutine != null)
+    //     {
+    //         StopCoroutine(moveRoutine);
+    //         moveRoutine = null;
+    //     }
+
+    //     // ✅ Libera la casilla actual al cancelar el movimiento
+    //     Vector2Int currentCoords = gridManager.GetCoordinatesFromPosition(unit.position);
+    //     Node currentNode = gridManager.GetNode(currentCoords);
+    //     if (currentNode != null)
+    //         currentNode.walkable = true;
+    // }
+    
+
+public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, Action onComplete)
+{
+    if (path == null || path.Count < 2)
+    {
+        onComplete?.Invoke();
+        return;
+    }
+
+    // 🔓 Libera la casilla inicial
+    Vector2Int startCords = gridManager.GetCoordinatesFromPosition(unit.position);
+    Node startNode = gridManager.GetNode(startCords);
+    startNode.walkable = true;
+
+    // Construye el array de posiciones del path
+    Vector3[] positions = new Vector3[path.Count];
+    for (int i = 0; i < path.Count; i++)
+    {
+        Vector3 pos = gridManager.GetPositionFromCoordinates(path[i].cords);
+        pos.y = 0.5f; // altura del jugador
+        positions[i] = pos;
+    }
+
+    // DOTween: mueve al jugador a lo largo del path completo
+    unit.DOPath(positions, totalTime,PathType.CatmullRom)
+        .SetEase(Ease.Linear)   // movimiento uniforme, sin aceleración extra
+        .SetLookAt(0.01f)       // rota el jugador suavemente hacia la dirección de movimiento
+        .OnComplete(() =>
+        {
+            // 🔒 Bloquea la casilla final
+            Vector2Int endCords = gridManager.GetCoordinatesFromPosition(unit.position);
+            Node endNode = gridManager.GetNode(endCords);
+            if (endNode != null)
+                endNode.walkable = false;
+
+            // ✅ Chequea robos de balón
+            CheckForBallStealAfterMove(unit);
+
+            // ✅ Notifica que terminó
+            onComplete?.Invoke();
+        });
 }
-   
-public IEnumerator FollowPath(Transform unit, List<Node> patht, Action onComplete)
+ public IEnumerator FollowPath2(Transform unit, List<Node> patht, Action onComplete)
 {
     if (patht == null || patht.Count < 2)
     {
@@ -86,37 +153,47 @@ public IEnumerator FollowPath(Transform unit, List<Node> patht, Action onComplet
         yield break;
     }
 
-    // 🔓 Libera la casilla actual
+    // 🔓 Libera la casilla inicial
     Vector2Int startCords = gridManager.GetCoordinatesFromPosition(unit.position);
     Node startNode = gridManager.GetNode(startCords);
     startNode.walkable = true;
 
-    for (int i = 1; i < patht.Count; i++)
+    // Genera la posición final (último nodo del path)
+    Vector3 targetPosition = gridManager.GetPositionFromCoordinates(patht[patht.Count - 1].cords);
+    targetPosition.y = 0.5f;
+
+    Vector3 velocity = Vector3.zero; // ⚡ mantener entre todo el path
+    float smoothTime = 0.6f;
+
+    while ((unit.position - targetPosition).sqrMagnitude > 0.001f)
     {
-        Vector3 startPosition = unit.position;
-        startPosition.y = 0.5f;
-
-        Vector3 endPosition = gridManager.GetPositionFromCoordinates(patht[i].cords);
-        endPosition.y = 0.5f;
-
-        float travelPercent = 0f;
-
-        unit.LookAt(endPosition);
-
-        while (travelPercent < 1f)
+        // Mira hacia el siguiente nodo en la ruta
+        for (int i = 1; i < patht.Count; i++)
         {
-            travelPercent += Time.deltaTime * movementSpeed;
-            unit.position = Vector3.Lerp(startPosition, endPosition, travelPercent);
-            yield return null;
+            Vector3 lookPos = gridManager.GetPositionFromCoordinates(patht[i].cords);
+            lookPos.y = 0.5f;
+            unit.LookAt(lookPos);
         }
+
+        unit.position = Vector3.SmoothDamp(
+            unit.position,
+            targetPosition,
+            ref velocity,
+            smoothTime
+        );
+
+        yield return null;
     }
+
+    // Asegura que quede exactamente en la casilla final
+    unit.position = targetPosition;
 
     // 🔒 Bloquea la casilla final
     Vector2Int endCords = gridManager.GetCoordinatesFromPosition(unit.position);
     Node endNode = gridManager.GetNode(endCords);
     endNode.walkable = false;
 
-    // ✅ Después de moverse, chequea si puede robar el balón
+    // ✅ Chequea robos de balón
     CheckForBallStealAfterMove(unit);
 
     // ✅ Notifica que terminó
@@ -144,7 +221,50 @@ public IEnumerator FollowPath(Transform unit, List<Node> patht, Action onComplet
                 MyDebug.Log("¡Robo automático después de moverse!");
             }
         }
+        
+    // 🔹 Nueva lógica: detectar frente a frente con otro jugador
+    foreach (var unit in TurnManager.Instance.allUnits) // allUnits: lista de todos los jugadores en el juego
+    {
+        if (unit == movedUnit) continue;
+
+        if (IsFacingEachOther(movedUnit, unit.transform))
+        {
+            MyDebug.Log($"{movedUnit.GetComponent<PlayerActionQueue>().playerID} está frente a frente  {unit.GetComponent<PlayerActionQueue>().playerID}");
+            // Aquí solo marcas frente a frente, sin robar
+            // → Más adelante podrías activar mini-combate o animación
+        }
     }
+    }
+    // Devuelve true si 'a' y 'b' están frente a frente en la cuadrícula
+public bool IsFacingEachOther(Transform a, Transform b)
+{
+    Vector2Int aCords = gridManager.GetCoordinatesFromPosition(a.position);
+    Vector2Int bCords = gridManager.GetCoordinatesFromPosition(b.position);
+
+    int deltaX = bCords.x - aCords.x;
+    int deltaZ = bCords.y - aCords.y; // .y es Z en tu grid
+
+    // Solo frente o atrás en fila o columna
+    if ((deltaX == 0 && Mathf.Abs(deltaZ) == 1) || (deltaZ == 0 && Mathf.Abs(deltaX) == 1))
+    {
+        // Direcciones en 2D (XZ)
+        Vector3 aDir = new Vector3(a.forward.x, 0, a.forward.z).normalized;
+        Vector3 bDir = new Vector3(b.forward.x, 0, b.forward.z).normalized;
+
+        Vector3 dirAToB = (b.position - a.position).normalized;
+        Vector3 dirBToA = (a.position - b.position).normalized;
+
+        // Comprobar que cada uno mira al otro (umbral para errores de rotación)
+        float threshold = 0.7f; // ~45 grados
+        if (Vector3.Dot(aDir, dirAToB) > threshold && Vector3.Dot(bDir, dirBToA) > threshold)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
   public bool AreAdjacent(Vector2Int a, Vector2Int b)
     {
         int deltaX = Mathf.Abs(a.x - b.x);

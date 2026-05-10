@@ -19,15 +19,13 @@ public class TurnManager : MonoBehaviour
 
  //   private bool isFirstTurn = true;
 
-    //    public event Action OnTurnStarted;
+
     public List<Transform> selectedPlayers = new List<Transform>();
     public Dictionary<string, UnitController> playerUnitsByID = new Dictionary<string, UnitController>();
    
-    public Dictionary<string, string> passQueue = new Dictionary<string, string>(); // 👈 aquí está
 
     public int maxActionsPerTurn = 12;
     private int remainingActions;
-    public Dictionary<string, List<Node>> movementQueue = new Dictionary<string, List<Node>>();
 
     public Dictionary<string, List<Node>> movementQueueIA = new Dictionary<string, List<Node>>();
 
@@ -65,8 +63,8 @@ public class TurnManager : MonoBehaviour
     private IEnumerator StartTurnDelayed()
     {
         yield return new WaitForSeconds(2f); // ⏳ espera solo en el primer turno
-       // IAInputHandler.Instance.CheckBallPossession();
-       // OnTurnStarted?.Invoke(); // avisamos al resto de sistemas
+    //    IAInputHandler.Instance.CheckBallPossession();
+       
     }
 
 
@@ -141,32 +139,35 @@ public class TurnManager : MonoBehaviour
     {    
 
         movesRemaining--;
-         MyDebug.Log("entro a OnUnitFinishedMoving ");
-        if (movesRemaining <= 0)
-        {
-            ExecuteShot();
-        }
+        // if (movesRemaining <= 0)
+        // {
+           
+        //     ExecuteShot();
+        // }
        
     }
    
 
 
-    public void ExecuteShot()
-    {
-        PlayerActionQueue player = BallManager.Instance.currentHolder.GetComponent<PlayerActionQueue>();
-        if (player.pendingShot != null && player.pendingShot.shooter != null && player.pendingShot.goalCenter != null)
-        {
-            StartCoroutine(BallManager.Instance.AnimateBallShot(player.pendingShot.shooter, player.pendingShot.goalCenter, player.pendingShot.offset));
-        }
-        player.pendingShot = null;
-    }
+    // public void ExecuteShot()
+    // {
+         
+    //     PlayerActionQueue player = BallManager.Instance.currentHolder.GetComponent<PlayerActionQueue>();
+       
+      
+    //     if (player.pendingShot != null && player.pendingShot.shooter != null && player.pendingShot.goalCenter != null)
+    //     {
+    //         StartCoroutine(BallManager.Instance.AnimateBallShot(player.pendingShot.shooter, player.pendingShot.goalCenter, player.pendingShot.offset));
+    //     }
+    //     player.pendingShot = null;
+    // }
   
   
 
  
     public void OnGoalScored(int teamID)
     {
-        MyDebug.Log("Gol marcado contra el equipo " + teamID);
+      
      
          movementQueueIA.Clear();
          selectedPlayers.Clear();
@@ -227,7 +228,6 @@ public class TurnManager : MonoBehaviour
       
         movementQueueIA.Clear();
         selectedPlayers.Clear();
-        MyDebug.Log("Turno finalizado.");
         StartNewTurn();
     }
 }

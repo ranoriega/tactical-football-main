@@ -5,7 +5,10 @@ using UnityEngine;
 
 [ExecuteAlways]
 public class Labeller : MonoBehaviour
-{
+{ 
+    Renderer tileRenderer;
+    Color originalColor;
+
     TextMeshPro label;
     public Vector2Int cords = new Vector2Int();
     GridManager gridManager;
@@ -17,10 +20,21 @@ public class Labeller : MonoBehaviour
 
     private void Awake()
     {
+        tileRenderer = GetComponentInChildren<Renderer>();
+        if (tileRenderer != null)
+        {
+            originalColor = tileRenderer.material.color;
+        }
+
         gridManager = FindAnyObjectByType<GridManager>();
         label = GetComponentInChildren<TextMeshPro>();
         label.enabled = false;
         DisplayCords();
+    }
+
+    void Start()
+    {
+         label.enabled = !label.IsActive();
     }
 
     private void Update()
@@ -35,8 +49,20 @@ public class Labeller : MonoBehaviour
         DisplayCords();
         transform.name = cords.ToString();
 
-        ToggleLables();
+        // ToggleLables();
         SetLabelColor();
+    }
+
+    public void Highlight()
+    {
+        if (tileRenderer != null)
+            tileRenderer.material.color = Color.white;
+    }
+
+    public void ResetHighlight()
+    {
+        if (tileRenderer != null)
+            tileRenderer.material.color = originalColor;
     }
 
     void SetLabelColor()

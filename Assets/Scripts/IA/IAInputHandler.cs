@@ -9,7 +9,6 @@ public class IAInputHandler : MonoBehaviour
     public StateMachine StateMachine { get; private set; }
     public static IAInputHandler Instance;
     Transform targetOpponent;
-    List<Node> patht = new List<Node>();
     public Dictionary<string, UnitController> aiUnitsByID = new Dictionary<string, UnitController>();
     UnitController ballHolder;
     
@@ -35,8 +34,10 @@ public class IAInputHandler : MonoBehaviour
     {
         if (StateMachine == null)
             StateMachine = new StateMachine();
-        gridManager = FindAnyObjectByType<GridManager>();
-        pathFinder = FindAnyObjectByType<Pathfinding>();
+
+       gridManager = GridManager.Instance;
+        pathFinder = Pathfinding.Instance; 
+
 
         // 🔑 Suscribirse aquí, ya que para este punto TurnManager ya existe
 
@@ -86,7 +87,6 @@ public UnitController GetBestPassingOption()
             best = mate;
         }
     }
-
     // Si ninguna opción es buena, devuelve null
     // (por si quieres que, en ese caso, avance con el balón)
     return best;
@@ -106,20 +106,6 @@ public UnitController GetBestPassingOption()
             return 100 - distToBall; // favorece compañeros más adelantados y cercanos
 
         return -999; // descartado
-    }
-
-    public void ShootToGoal()
-    {
-        if (BallManager.Instance.GetCurrentBallHolder() != null)
-        {
-            Transform player = BallManager.Instance.GetCurrentBallHolder();
-            PlayerActionQueue action = player.GetComponent<PlayerActionQueue>();
-            action.RegisterShot(player,new Vector3(-1f,  1.0f, 0f));
-        }
-        else
-        {
-            MyDebug.LogWarning("No hay jugador con la pelota para registrar tiro.");
-        }
     }
 
     public void PassTo(UnitController teammate)
@@ -244,8 +230,7 @@ public void MoveTowardsOpponentGoal()
     public void Recalculate(Vector2Int startCords, Vector2Int targetCords, Transform playerIA)
     {
 
-        patht.Clear();
-        StopAllCoroutines();
+
         // Calcula el nuevo camino desde start a target
         List<Node> path = pathFinder.GetNewPath(startCords, targetCords);
 

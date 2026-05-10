@@ -51,12 +51,19 @@ public class GoalSpawner : MonoBehaviour, IGameSystem
     public Transform GetOpponentGoalCenter(int teamID)
     {
         // Devuelve el arco contrario
-        foreach (var g in goals)
-        {
-          
-            if (g.teamID != teamID)
-        return g.goalCenter;
-        }
+       if (teamID == 1)
+       {
+        return goals[1].GetComponent<Goal>().goalCenter;
+        
+       }else if(teamID ==2)       
+       {
+         return goals[0].GetComponent<Goal>().goalCenter;
+
+    }
+    else
+    {
+      MyDebug.Log("no hay teamid");
+    }
         return null;
     }
   public void Initialize()

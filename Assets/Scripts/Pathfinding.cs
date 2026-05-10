@@ -4,10 +4,13 @@ using UnityEngine;
 
 public class Pathfinding : MonoBehaviour
 {
+    [SerializeField] private GridManager gridManager;
     [SerializeField] Vector2Int startCords;
+    [SerializeField] Vector2Int targetCords;
+
     public Vector2Int StartCords { get { return startCords; } }
 
-    [SerializeField] Vector2Int targetCords;
+  
     public Vector2Int TargetCords { get { return targetCords; } }
 
     Node startNode;
@@ -17,19 +20,21 @@ public class Pathfinding : MonoBehaviour
     Queue<Node> frontier = new Queue<Node>();
     Dictionary<Vector2Int, Node> reached = new Dictionary<Vector2Int, Node>();
 
-    GridManager gridManager;
     Dictionary<Vector2Int, Node> grid = new Dictionary<Vector2Int, Node>();
 
     Vector2Int[] searchOrder = {Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down};
-
+    public static Pathfinding Instance { get; private set; }
 
     private void Awake()
     {
-        gridManager = FindAnyObjectByType<GridManager>();
-        if(gridManager != null)
+        if (Instance != null && Instance != this) Destroy(gameObject);
+        else Instance = this;
+
+        if (gridManager != null)
         {
             grid = gridManager.Grid;
         }
+        
     }
     // public List<Node> GetNewPath()
     // {
