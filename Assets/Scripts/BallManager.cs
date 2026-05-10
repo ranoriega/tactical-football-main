@@ -275,58 +275,6 @@ public void ShotBallTo(Transform shooter, Transform goalCenter, Vector3 offset_,
     }
 
 
-  IEnumerator AnimateBallPassHigh(Transform target, System.Action onComplete)
-    {
-        Vector3 start = currentBall.transform.position;
-        Vector3 end = target.position + new Vector3(0f, 0.05f, 0.25f);
-
-        float duration = 0.8f; // un pase bombeado tarda un poco más
-        float elapsed = 0f;
-
-        currentBall.transform.SetParent(null); // balón libre
-
-        Transform interceptor = null;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            // Línea base entre inicio y fin
-            Vector3 newPos = Vector3.Lerp(start, end, t);
-
-            // 📌 Añadir altura con parábola: sube al inicio, baja al final
-            float height = Mathf.Sin(t * Mathf.PI) * 1.5f; // 1.5f = altura máxima
-            newPos.y += height;
-
-            // 📌 Chequear interceptores (jugadores que salten/corten)
-            Collider[] hits = Physics.OverlapSphere(newPos, 0.3f);
-            foreach (Collider col in hits)
-            {
-                PlayerTeam team = col.GetComponent<PlayerTeam>();
-                if (team != null && team.teamID != currentHolder.GetComponent<PlayerTeam>().teamID)
-                {
-                    interceptor = col.transform;
-                    break;
-                }
-            }
-
-            if (interceptor != null)
-            {
-                MyDebug.Log($"⚡ Balón interceptado en el aire por {interceptor.name}");
-                GiveBallTo(interceptor);
-                yield break;
-            }
-
-            currentBall.transform.position = newPos;
-            yield return null;
-        }
-
-        // ✅ Llega al receptor
-        GiveBallTo(target);
-            onComplete?.Invoke(); // 🔥 IMPORTANTE
-    }
-
 
     public void DropBall()
     {
