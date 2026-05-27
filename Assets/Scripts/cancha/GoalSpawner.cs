@@ -33,12 +33,13 @@ public class GoalSpawner : MonoBehaviour, IGameSystem
     float firstRowZ = gridManager.GetPositionFromCoordinates(new Vector2Int(0, 0)).z;
     float lastRowZ = gridManager.GetPositionFromCoordinates(new Vector2Int(0, gridManager.gridSize.y - 1)).z;
 
-    Vector3 posA = new Vector3(centerX, yOffset, firstRowZ - 0.01f);
+    Vector3 posA = new Vector3(centerX, yOffset, firstRowZ - 0.67f);
     Vector3 posB = new Vector3(centerX, yOffset, lastRowZ + 0.13f);
 
 
-    GameObject goalA = Instantiate(goalPrefab, posA, Quaternion.Euler(0, rotationY, 0));
-    GameObject goalB = Instantiate(goalPrefab, posB, Quaternion.Euler(0, -0.6f, 0));
+
+    GameObject goalA = Instantiate(goalPrefab, posA, Quaternion.Euler(359.844208f, 89.0132294f, 179.482956f));
+    GameObject goalB = Instantiate(goalPrefab, posB, Quaternion.Euler(0, 271.390015f, 181.210007f));
     
 
   goals[0] = goalA.GetComponent<Goal>();

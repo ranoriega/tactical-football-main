@@ -1,4 +1,4 @@
-Shader "Custom/NewSurfaceShader"
+Shader "AnimeOutline"
 {
    Properties
 	{
@@ -223,7 +223,7 @@ Shader "Custom/NewSurfaceShader"
 			ENDCG
 		}
 	}
-	CustomEditor "ASWUtilsOutlineGUI"
+	
 	
 	
 }

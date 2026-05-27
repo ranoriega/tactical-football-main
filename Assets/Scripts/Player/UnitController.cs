@@ -9,7 +9,7 @@ public class UnitController : MonoBehaviour
 {
     private Renderer rend;
    
-
+  Animator animator;
      private Coroutine moveRoutine;
      private PlayerTeam team;
     [SerializeField] float movementSpeed = 1f;
@@ -28,6 +28,7 @@ public class UnitController : MonoBehaviour
     {
         gridManager = FindAnyObjectByType<GridManager>();
         initialPosition = transform.position; // Guardar dónde empezó
+         animator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -111,7 +112,11 @@ public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, 
         onComplete?.Invoke();
         return;
     }
-
+   // 🔥 ACTIVA ANIMACIÓN AL EMPEZAR
+    if (animator != null)
+    {
+        animator.SetFloat("isMoving", 1f);
+    }
     // 🔓 Libera la casilla inicial
     Vector2Int startCords = gridManager.GetCoordinatesFromPosition(unit.position);
     Node startNode = gridManager.GetNode(startCords);
@@ -131,7 +136,12 @@ public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, 
         .SetEase(Ease.Linear)   // movimiento uniforme, sin aceleración extra
         .SetLookAt(0.01f)       // rota el jugador suavemente hacia la dirección de movimiento
         .OnComplete(() =>
-        {
+        { 
+              // 🔥 DESACTIVA ANIMACIÓN AL TERMINAR
+            if (animator != null)
+            {
+                animator.SetFloat("isMoving", 0f);
+            }
             // 🔒 Bloquea la casilla final
             Vector2Int endCords = gridManager.GetCoordinatesFromPosition(unit.position);
             Node endNode = gridManager.GetNode(endCords);
@@ -145,60 +155,7 @@ public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, 
             onComplete?.Invoke();
         });
 }
- public IEnumerator FollowPath2(Transform unit, List<Node> patht, Action onComplete)
-{
-    if (patht == null || patht.Count < 2)
-    {
-        onComplete?.Invoke();
-        yield break;
-    }
 
-    // 🔓 Libera la casilla inicial
-    Vector2Int startCords = gridManager.GetCoordinatesFromPosition(unit.position);
-    Node startNode = gridManager.GetNode(startCords);
-    startNode.walkable = true;
-
-    // Genera la posición final (último nodo del path)
-    Vector3 targetPosition = gridManager.GetPositionFromCoordinates(patht[patht.Count - 1].cords);
-    targetPosition.y = 0.5f;
-
-    Vector3 velocity = Vector3.zero; // ⚡ mantener entre todo el path
-    float smoothTime = 0.6f;
-
-    while ((unit.position - targetPosition).sqrMagnitude > 0.001f)
-    {
-        // Mira hacia el siguiente nodo en la ruta
-        for (int i = 1; i < patht.Count; i++)
-        {
-            Vector3 lookPos = gridManager.GetPositionFromCoordinates(patht[i].cords);
-            lookPos.y = 0.5f;
-            unit.LookAt(lookPos);
-        }
-
-        unit.position = Vector3.SmoothDamp(
-            unit.position,
-            targetPosition,
-            ref velocity,
-            smoothTime
-        );
-
-        yield return null;
-    }
-
-    // Asegura que quede exactamente en la casilla final
-    unit.position = targetPosition;
-
-    // 🔒 Bloquea la casilla final
-    Vector2Int endCords = gridManager.GetCoordinatesFromPosition(unit.position);
-    Node endNode = gridManager.GetNode(endCords);
-    endNode.walkable = false;
-
-    // ✅ Chequea robos de balón
-    CheckForBallStealAfterMove(unit);
-
-    // ✅ Notifica que terminó
-    onComplete?.Invoke();
-}
 
     //REVISA POCIBLES ROBOS DE BALON
     void CheckForBallStealAfterMove(Transform movedUnit)
