@@ -37,21 +37,23 @@ public class UnitController : MonoBehaviour
 
 
     }
-     public void HighlightSelection(Color c)
+ public void HighlightSelection(Color c)
+{
+    if (rend != null)
     {
-     
-        if (rend != null && rend.material.color != Color.cyan )
-        {
-            rend.material.color = c;
-        }
+        rend.material.SetFloat("_UseTint", 1f);   // activar tint
+        rend.material.SetColor("_Tint", c);  // aplicar color
     }
+}
 
     public void ResetHighlight()
     {
-        if (rend != null)
-        {
-            rend.material.color = team.OriginalColor;
-        }
+ if (rend != null)
+    {
+        rend.material.SetFloat("_UseTint", 0f);   // desactivar tint
+    }
+    
+
     }
 
     //EJECUTA EL MOVIMIENTO 

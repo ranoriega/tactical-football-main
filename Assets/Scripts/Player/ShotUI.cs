@@ -8,6 +8,7 @@ public class ShotUI : MonoBehaviour
     public GameObject panel; // Panel con 6 botones
 
     private Transform shooter;
+         [SerializeField] private Goal[] goals;
 
     void Awake()
     {
@@ -65,20 +66,39 @@ public class ShotUI : MonoBehaviour
     // public void Select_MidLeft()     => SelectShotLocal(new Vector3(-1f,  0.5f, 0f));
     // public void Select_MidRight()    => SelectShotLocal(new Vector3( 1f,  0.5f, 0f));
     public void Select_BottomRight() {
-      
+         
           int shooterID = shooter.GetComponent<PlayerTeam>().teamID;
-        Transform goalCenter = GoalSpawner.Instance.GetOpponentGoalCenter(shooterID);
+           Transform goalCenter = null;
+       if (shooterID == 1)
+       {
+       goalCenter = goals[1].GetComponent<Goal>().goalCenter;
+        
+       }else if(shooterID ==2)       
+       {
+       goalCenter = goals[0].GetComponent<Goal>().goalCenter;
+       }
+       
         Vector3 desiredWorldPos = new Vector3(7.13999987f, 0.77110827f, 24.1803646f);
         Vector3 offset = goalCenter.InverseTransformPoint(desiredWorldPos);
         SelectShotLocal(offset,goalCenter);
      }
     public void Select_BottomLeft()
     {
-        int shooterID = shooter.GetComponent<PlayerTeam>().teamID;
-        Transform goalCenter = GoalSpawner.Instance.GetOpponentGoalCenter(shooterID);
-        Vector3 desiredWorldPos = new Vector3(3.05042219f, 0.77110827f,24.87f);
+           int shooterID = shooter.GetComponent<PlayerTeam>().teamID;
+           Transform goalCenter = null;
+       if (shooterID == 1)
+       {
+       goalCenter = goals[1].GetComponent<Goal>().goalCenter;
+        
+       }else if(shooterID ==2)       
+       {
+       goalCenter = goals[0].GetComponent<Goal>().goalCenter;
+       }
+       
+         Vector3 desiredWorldPos = new Vector3(3.05042219f, 0.77110827f,24.87f);
         Vector3 offset = goalCenter.InverseTransformPoint(desiredWorldPos);
         SelectShotLocal(offset,goalCenter);
+       
     }
    
 

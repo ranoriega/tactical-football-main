@@ -38,7 +38,7 @@ public class GoalSpawner : MonoBehaviour, IGameSystem
 
 
 
-    GameObject goalA = Instantiate(goalPrefab, posA, Quaternion.Euler(359.844208f, 89.0132294f, 179.482956f));
+    GameObject goalA = Instantiate(goalPrefab, posA, Quaternion.Euler(357.321167f,276.075745f,356.754944f));
     GameObject goalB = Instantiate(goalPrefab, posB, Quaternion.Euler(0, 271.390015f, 181.210007f));
     
 
