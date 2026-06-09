@@ -4,6 +4,7 @@ using UnityEngine;
 public class BallManager : MonoBehaviour
 {
     public static BallManager Instance;
+    
 
     [SerializeField] GameObject ballPrefab;
     private GameObject currentBall;
@@ -23,7 +24,7 @@ public class BallManager : MonoBehaviour
     {
      
 
-        // 📌 Radio para detectar rivales
+        //  Radio para detectar rivales
         // float stealRange = 0.6f;
 
         // Collider[] hits = Physics.OverlapSphere(currentHolder.position, stealRange);
@@ -34,8 +35,8 @@ public class BallManager : MonoBehaviour
 
         //     if (team != null && team.teamID != currentHolder.GetComponent<PlayerTeam>().teamID)
         //     {
-        //         // ⚡ Robo → rival quita el balón
-        //         MyDebug.Log($"⚡ {col.name} intercepto el balón a {currentHolder.name}");
+        //         //  Robo → rival quita el balón
+        //         MyDebug.Log($" {col.name} intercepto el balón a {currentHolder.name}");
         //         GiveBallTo(col.transform);
         //         return; // salir en cuanto alguien robe
         //     }
@@ -84,18 +85,7 @@ Vector3 Curve(float t, Vector3 start, Vector3 end)
     return pos;
 }
 
-Vector3 Combine(float t, Vector3 start, Vector3 end)
-{
-    Vector3 pos = Vector3.Lerp(start, end, t);
 
-    // curva lateral
-    pos.x += Mathf.Sin(t * Mathf.PI) * 1.0f;
-
-    // altura
-    pos.y += Mathf.Sin(t * Mathf.PI) * 1.5f;
-
-    return pos;
-}
 public void PassBallTo(Transform targetPlayer, PassType type, System.Action onComplete)
 {
       Vector3 start = currentBall.transform.position;
@@ -107,20 +97,7 @@ public void PassBallTo(Transform targetPlayer, PassType type, System.Action onCo
         return;
     }
 
-    // switch (type)
-    // {
-    //     case PassType.Ground:
-    //         StartCoroutine(AnimateBallPass(targetPlayer, onComplete));
-    //         break;
-
-    //     case PassType.High:
-    //         StartCoroutine(AnimateBallPassHigh(targetPlayer, onComplete));
-    //         break;
-
-    //     default:
-    //         StartCoroutine(AnimateBallPass(targetPlayer, onComplete));
-    //         break;
-    // }
+    
     System.Func<float, Vector3> trajectory = type switch
     {
         PassType.High => t => High(t, start, end),
@@ -131,52 +108,7 @@ public void PassBallTo(Transform targetPlayer, PassType type, System.Action onCo
     StartCoroutine(AnimateBall(targetPlayer, trajectory, onComplete));
 }
 
-//   IEnumerator AnimateBallPass(Transform target, System.Action onComplete)
-//     {
-//          Vector3 start = currentBall.transform.position;
-//         Vector3 end = target.position + new Vector3(0f, 0.05f, 0.25f);
 
-//         float duration = 0.8f;
-//         float elapsed = 0f;
-
-//         currentBall.transform.SetParent(null); // balón libre
-
-//         Transform interceptor = null;
-
-//         while (elapsed < duration)
-//         {
-//             elapsed += Time.deltaTime;
-//             float t = elapsed / duration;
-//             Vector3 newPos = Vector3.Lerp(start, end, t);
-
-//             // 📌 Chequear interceptores cercanos al balón
-//             Collider[] hits = Physics.OverlapSphere(newPos, 0.3f); // radio de detección
-//             foreach (Collider col in hits)
-//             {
-//                 PlayerTeam team = col.GetComponent<PlayerTeam>();
-//                 if (team != null && team.teamID != currentHolder.GetComponent<PlayerTeam>().teamID)
-//                 {
-//                     // Es un rival → intercepta
-//                     interceptor = col.transform;
-//                     break;
-//                 }
-//             }
-
-//             if (interceptor != null)
-//             {
-//                 MyDebug.Log($"Balón interceptado por {interceptor.name}");
-//                 GiveBallTo(interceptor);
-//                 yield break; // cancelar pase
-//             }
-
-//             currentBall.transform.position = newPos;
-//             yield return null;
-//         }
-
-//         // Si nadie interceptó, llega al objetivo
-//         GiveBallTo(target);
-//           onComplete?.Invoke(); // 🔥 IMPORTANTE
-//     }
     
 IEnumerator AnimateBall(
     Transform target,
@@ -195,10 +127,10 @@ IEnumerator AnimateBall(
         elapsed += Time.deltaTime;
         float t = elapsed / duration;
 
-        // 🔥 AQUÍ ESTÁ EL CAMBIO CLAVE
+      
         Vector3 newPos = trajectory(t);
 
-        // 📌 Intercepción (esto se queda igual)
+      
         Collider[] hits = Physics.OverlapSphere(newPos, 0.3f);
         foreach (Collider col in hits)
         {
@@ -270,8 +202,7 @@ public void ShotBallTo(Transform shooter, Transform goalCenter, Vector3 offset_,
             yield return null;
         }
 
-       onComplete?.Invoke(); // 🔥 IMPORTANTE
-        // Aquí puedes agregar verificación de gol, efectos, etc.
+       onComplete?.Invoke(); 
     }
 
 

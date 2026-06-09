@@ -7,19 +7,24 @@ using UnityEngine;
 
 public class UnitController : MonoBehaviour
 {
+      public GameRulesSystem conflictSystem;
     private Renderer rend;
-   
-  Animator animator;
+
+    public GameObject kickWavePrefab;
+    Animator animator;
      private Coroutine moveRoutine;
-     private PlayerTeam team;
-    [SerializeField] float movementSpeed = 1f;
     List<Node> path = new List<Node>();
     public Vector3 initialPosition;  // posición de spawn original
-    GridManager gridManager;
+     GridManager gridManager;
+    private Transform _targetPlayer;
+    private PassType _type;
+    private System.Action _onComplete;
+
+
       private void Awake()
     {
        rend = GetComponentInChildren<Renderer>();
-       team = GetComponent<PlayerTeam>();
+      
 
     }
 
@@ -37,6 +42,10 @@ public class UnitController : MonoBehaviour
 
 
     }
+ #region VISUAL   
+    // ===============================
+//        VISUAL HIGHLIGHT
+// ===============================
  public void HighlightSelection(Color c)
 {
     if (rend != null)
@@ -55,10 +64,17 @@ public class UnitController : MonoBehaviour
     
 
     }
+#endregion
 
-    //EJECUTA EL MOVIMIENTO 
-    //UNIT ES EL JUGADOR A MOVERSE
-    // PATH ES EL CAMINO A RECORRER 
+ #region MOVEMENT
+// ===============================
+//         PATH MOVEMENT
+// ===============================
+
+// Inicia el movimiento del jugador siguiendo un path de nodos
+// unit: objeto que se mueve
+// path: lista de nodos que forman el recorrido
+// onFinish: callback cuando termina el recorrido
     public void StartFollowingPath(Transform unit, List<Node> path, System.Action onFinish)
     {
         // 🔹 Cancela cualquier tween previo del jugador
@@ -69,16 +85,9 @@ public class UnitController : MonoBehaviour
         FollowPathDOTween(unit, path, totalTime, onFinish);
     }
 
-
-    // public void StartFollowingPath(Transform unit, List<Node> path, System.Action onFinish)
-    // {
-    //     // Si ya estaba corriendo, la paramos antes de iniciar otra
-    //     if (moveRoutine != null)
-    //         StopCoroutine(moveRoutine);
-
-    //     moveRoutine = StartCoroutine(FollowPath2(unit, path, onFinish));
-    // }
-
+      // ===============================
+//          MOVEMENT STOP
+// ===============================
     public void StopMoving(Transform unit)
     {
         // Detiene cualquier movimiento DOTween en este jugador
@@ -91,74 +100,136 @@ public class UnitController : MonoBehaviour
             currentNode.walkable = true;
     }
 
-    // public void StopMoving(Transform unit)
-    // {
-    //     if (moveRoutine != null)
-    //     {
-    //         StopCoroutine(moveRoutine);
-    //         moveRoutine = null;
-    //     }
-
-    //     // ✅ Libera la casilla actual al cancelar el movimiento
-    //     Vector2Int currentCoords = gridManager.GetCoordinatesFromPosition(unit.position);
-    //     Node currentNode = gridManager.GetNode(currentCoords);
-    //     if (currentNode != null)
-    //         currentNode.walkable = true;
-    // }
+   
     
 
-public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, Action onComplete)
-{
-    if (path == null || path.Count < 2)
+    public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, Action onComplete)
     {
-        onComplete?.Invoke();
+        if (path == null || path.Count < 2)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+    // 🔥 ACTIVA ANIMACIÓN AL EMPEZAR
+        if (animator != null)
+        {
+            animator.SetFloat("isMoving", 1f);
+        }
+        // 🔓 Libera la casilla inicial
+        Vector2Int startCords = gridManager.GetCoordinatesFromPosition(unit.position);
+        Node startNode = gridManager.GetNode(startCords);
+        startNode.walkable = true;
+
+        // Construye el array de posiciones del path
+        Vector3[] positions = new Vector3[path.Count];
+        for (int i = 0; i < path.Count; i++)
+        {
+            Vector3 pos = gridManager.GetPositionFromCoordinates(path[i].cords);
+            pos.y = 0.5f; // altura del jugador
+            positions[i] = pos;
+        }
+
+        // DOTween: mueve al jugador a lo largo del path completo
+        unit.DOPath(positions, totalTime,PathType.CatmullRom)
+            .SetEase(Ease.Linear)   // movimiento uniforme, sin aceleración extra
+            .SetLookAt(0.01f)       // rota el jugador suavemente hacia la dirección de movimiento
+            .OnComplete(() =>
+            { 
+                // 🔥 DESACTIVA ANIMACIÓN AL TERMINAR
+                if (animator != null)
+                {
+                    animator.SetFloat("isMoving", 0f);
+                }
+                // 🔒 Bloquea la casilla final
+                Vector2Int endCords = gridManager.GetCoordinatesFromPosition(unit.position);
+                Node endNode = gridManager.GetNode(endCords);
+                if (endNode != null)
+                    endNode.walkable = false;
+
+                CheckForTileConflict(unit);
+                // ✅ Chequea robos de balón
+                CheckForBallStealAfterMove(unit);
+
+                // ✅ Notifica que terminó
+                onComplete?.Invoke();
+            });
+    }
+    private void CheckForTileConflict(Transform movedUnit)
+{
+    Vector2Int movedCoords =
+        gridManager.GetCoordinatesFromPosition(movedUnit.position);
+
+    foreach (var unit in TurnManager.Instance.allUnits)
+    {
+        if (unit.transform == movedUnit)
+            continue;
+
+        Vector2Int otherCoords =
+            gridManager.GetCoordinatesFromPosition(unit.transform.position);
+
+        if (movedCoords != otherCoords)
+            continue;
+
+        Transform holder = BallManager.Instance.currentHolder;
+
+        bool someoneHasBall =
+            holder == movedUnit ||
+            holder == unit.transform;
+
+        if (!someoneHasBall)
+            continue;
+       MyDebug.Log(
+    $"Conflicto detectado: {movedUnit.name} vs {unit.name}"
+);
+      conflictSystem.ResolveTileConflict(movedUnit, unit.transform);
         return;
     }
-   // 🔥 ACTIVA ANIMACIÓN AL EMPEZAR
-    if (animator != null)
-    {
-        animator.SetFloat("isMoving", 1f);
-    }
-    // 🔓 Libera la casilla inicial
-    Vector2Int startCords = gridManager.GetCoordinatesFromPosition(unit.position);
-    Node startNode = gridManager.GetNode(startCords);
-    startNode.walkable = true;
-
-    // Construye el array de posiciones del path
-    Vector3[] positions = new Vector3[path.Count];
-    for (int i = 0; i < path.Count; i++)
-    {
-        Vector3 pos = gridManager.GetPositionFromCoordinates(path[i].cords);
-        pos.y = 0.5f; // altura del jugador
-        positions[i] = pos;
-    }
-
-    // DOTween: mueve al jugador a lo largo del path completo
-    unit.DOPath(positions, totalTime,PathType.CatmullRom)
-        .SetEase(Ease.Linear)   // movimiento uniforme, sin aceleración extra
-        .SetLookAt(0.01f)       // rota el jugador suavemente hacia la dirección de movimiento
-        .OnComplete(() =>
-        { 
-              // 🔥 DESACTIVA ANIMACIÓN AL TERMINAR
-            if (animator != null)
-            {
-                animator.SetFloat("isMoving", 0f);
-            }
-            // 🔒 Bloquea la casilla final
-            Vector2Int endCords = gridManager.GetCoordinatesFromPosition(unit.position);
-            Node endNode = gridManager.GetNode(endCords);
-            if (endNode != null)
-                endNode.walkable = false;
-
-            // ✅ Chequea robos de balón
-            CheckForBallStealAfterMove(unit);
-
-            // ✅ Notifica que terminó
-            onComplete?.Invoke();
-        });
 }
+    #endregion
 
+#region KICK
+    // ===============================
+//           KICK SYSTEM
+// ===============================
 
+// Inicia el proceso de pase/patada hacia otro jugador
+     public void StartKickPath(Transform targetPlayer, PassType type, System.Action onComplete)
+    {
+        _targetPlayer = targetPlayer;
+    _type = type;
+    _onComplete = onComplete;
+    
+    Vector3 direction = _targetPlayer.position - transform.position;
+    direction.y = 0f; // importante: solo giro horizontal
+
+    if (direction != Vector3.zero)
+    {
+        Quaternion lookRotation = Quaternion.LookRotation(direction);
+        transform.rotation = lookRotation;
+    }
+
+    if (animator != null)
+    {   
+      //  KickCameraController.Instance.OnKick(BallManager.Instance.currentHolder.transform);
+        animator.SetTrigger("KickApply");
+    }
+      
+    }
+    
+      public void KickBall()
+    {     
+       
+        BallManager.Instance.PassBallTo(_targetPlayer, _type, _onComplete);
+    }
+ 
+
+    public void OnFootImpact()
+    {
+        Instantiate(kickWavePrefab,BallManager.Instance.currentHolder.transform.position, BallManager.Instance.currentHolder.transform.rotation);
+    }
+#endregion
+  
+ #region RecalculateSteal
     //REVISA POCIBLES ROBOS DE BALON
     void CheckForBallStealAfterMove(Transform movedUnit)
     {
@@ -195,34 +266,34 @@ public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, 
     }
     }
     // Devuelve true si 'a' y 'b' están frente a frente en la cuadrícula
-public bool IsFacingEachOther(Transform a, Transform b)
-{
-    Vector2Int aCords = gridManager.GetCoordinatesFromPosition(a.position);
-    Vector2Int bCords = gridManager.GetCoordinatesFromPosition(b.position);
-
-    int deltaX = bCords.x - aCords.x;
-    int deltaZ = bCords.y - aCords.y; // .y es Z en tu grid
-
-    // Solo frente o atrás en fila o columna
-    if ((deltaX == 0 && Mathf.Abs(deltaZ) == 1) || (deltaZ == 0 && Mathf.Abs(deltaX) == 1))
+    public bool IsFacingEachOther(Transform a, Transform b)
     {
-        // Direcciones en 2D (XZ)
-        Vector3 aDir = new Vector3(a.forward.x, 0, a.forward.z).normalized;
-        Vector3 bDir = new Vector3(b.forward.x, 0, b.forward.z).normalized;
+        Vector2Int aCords = gridManager.GetCoordinatesFromPosition(a.position);
+        Vector2Int bCords = gridManager.GetCoordinatesFromPosition(b.position);
 
-        Vector3 dirAToB = (b.position - a.position).normalized;
-        Vector3 dirBToA = (a.position - b.position).normalized;
+        int deltaX = bCords.x - aCords.x;
+        int deltaZ = bCords.y - aCords.y; // .y es Z en tu grid
 
-        // Comprobar que cada uno mira al otro (umbral para errores de rotación)
-        float threshold = 0.7f; // ~45 grados
-        if (Vector3.Dot(aDir, dirAToB) > threshold && Vector3.Dot(bDir, dirBToA) > threshold)
+        // Solo frente o atrás en fila o columna
+        if ((deltaX == 0 && Mathf.Abs(deltaZ) == 1) || (deltaZ == 0 && Mathf.Abs(deltaX) == 1))
         {
-            return true;
-        }
-    }
+            // Direcciones en 2D (XZ)
+            Vector3 aDir = new Vector3(a.forward.x, 0, a.forward.z).normalized;
+            Vector3 bDir = new Vector3(b.forward.x, 0, b.forward.z).normalized;
 
-    return false;
-}
+            Vector3 dirAToB = (b.position - a.position).normalized;
+            Vector3 dirBToA = (a.position - b.position).normalized;
+
+            // Comprobar que cada uno mira al otro (umbral para errores de rotación)
+            float threshold = 0.7f; // ~45 grados
+            if (Vector3.Dot(aDir, dirAToB) > threshold && Vector3.Dot(bDir, dirBToA) > threshold)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
   public bool AreAdjacent(Vector2Int a, Vector2Int b)
     {
@@ -230,5 +301,5 @@ public bool IsFacingEachOther(Transform a, Transform b)
         int deltaZ = Mathf.Abs(a.y - b.y); // .y es Z en tu grid
         return (deltaX + deltaZ) == 1;
     }
-
+#endregion
 }

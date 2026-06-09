@@ -7,6 +7,8 @@ public class ShotUI : MonoBehaviour
 
     public GameObject panel; // Panel con 6 botones
 
+    [SerializeField] public int target; // Panel con 6 botones
+
     private Transform shooter;
          [SerializeField] private Goal[] goals;
 
@@ -68,15 +70,19 @@ public class ShotUI : MonoBehaviour
     public void Select_BottomRight() {
          
           int shooterID = shooter.GetComponent<PlayerTeam>().teamID;
-           Transform goalCenter = null;
-       if (shooterID == 1)
-       {
-       goalCenter = goals[1].GetComponent<Goal>().goalCenter;
-        
-       }else if(shooterID ==2)       
-       {
-       goalCenter = goals[0].GetComponent<Goal>().goalCenter;
-       }
+             int targetGoalTeam = shooterID == 1 ? 2 : 1;
+
+    Goal targetGoal = GetGoalByTeam(targetGoalTeam);
+    target = targetGoal.TeamID;
+
+    if (targetGoal == null)
+    {
+        Debug.LogError("No se encontró la portería rival.");
+        return;
+    }
+
+    Transform goalCenter = targetGoal.goalCenter;
+
        
         Vector3 desiredWorldPos = new Vector3(7.13999987f, 0.77110827f, 24.1803646f);
         Vector3 offset = goalCenter.InverseTransformPoint(desiredWorldPos);
@@ -85,15 +91,19 @@ public class ShotUI : MonoBehaviour
     public void Select_BottomLeft()
     {
            int shooterID = shooter.GetComponent<PlayerTeam>().teamID;
-           Transform goalCenter = null;
-       if (shooterID == 1)
-       {
-       goalCenter = goals[1].GetComponent<Goal>().goalCenter;
-        
-       }else if(shooterID ==2)       
-       {
-       goalCenter = goals[0].GetComponent<Goal>().goalCenter;
-       }
+              int targetGoalTeam = shooterID == 1 ? 2 : 1;
+
+    Goal targetGoal = GetGoalByTeam(targetGoalTeam);
+    target = targetGoal.TeamID;
+
+    if (targetGoal == null)
+    {
+        Debug.LogError("No se encontró la portería rival.");
+        return;
+    }
+
+    Transform goalCenter = targetGoal.goalCenter;
+
        
          Vector3 desiredWorldPos = new Vector3(3.05042219f, 0.77110827f,24.87f);
         Vector3 offset = goalCenter.InverseTransformPoint(desiredWorldPos);
@@ -101,7 +111,16 @@ public class ShotUI : MonoBehaviour
        
     }
    
+private Goal GetGoalByTeam(int teamID)
+{
+    foreach (Goal goal in goals)
+    {
+        if (goal.TeamID == teamID)
+            return goal;
+    }
 
+    return null;
+}
     // Opcional: cancelar con ESC
     void Update()
     {

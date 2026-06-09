@@ -53,7 +53,7 @@ public class PlayerSpawner : MonoBehaviour, IGameSystem
                 rend = player.GetComponentInChildren<Renderer>();
                 if (rend != null)
                 {
-                    team.OriginalColor = rend.material.color; // guardamos el color inicial
+                    team.OriginalColor = rend.materials[1].color; // guardamos el color inicial
                 }
         
             }
@@ -91,16 +91,17 @@ public class PlayerSpawner : MonoBehaviour, IGameSystem
             Vector2Int pos = spawnPositions2[i];
             Vector3 spawnPos = gridManager.GetPositionFromCoordinates(pos);
             spawnPos += Vector3.up * 0.5f;  // Ajusta 0.4f según el tamaño de tu jugador
-            GameObject opponent = Instantiate(opponentPrefab, spawnPos, Quaternion.identity);
-             if (i == spawnPositions.Length / 2)
+            GameObject opponent = Instantiate(opponentPrefab, spawnPos, Quaternion.Euler(0, 180, 0));
+             if (i == spawnPositions2.Length / 2)
             {
                 TurnManager.Instance.centerPlayerAI = opponent.GetComponent<UnitController>();
             }
             // 🔵 Cambiar color visual
-            Renderer rend = opponent.GetComponentInChildren<Renderer>();
+             Renderer rend = opponent.GetComponentInChildren<Renderer>();
+             
             if (rend != null)
             {
-                rend.material.color = opponentColor;
+              rend.materials[1].color =opponentColor;
             }
 
             UnitController unitCtrl = opponent.GetComponent<UnitController>();
@@ -128,7 +129,7 @@ public class PlayerSpawner : MonoBehaviour, IGameSystem
             {
                 team.teamID = 2; // ← Este es el equipo del oponente
                 team.initialCoordinates = pos;
-                team.OriginalColor = opponentColor;
+                // team.OriginalColor = opponentColor;
             }
          
         }

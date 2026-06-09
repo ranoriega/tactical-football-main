@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class Goal : MonoBehaviour
 {
-    public int teamID; // 1 = jugador, 2 = oponente
+      [SerializeField] private int teamID;
+
+    public int TeamID => teamID;
     public Transform goalCenter;   
 
     

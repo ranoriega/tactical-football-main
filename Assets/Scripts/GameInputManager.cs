@@ -66,55 +66,31 @@ public class GameInputManager : MonoBehaviour
                 MyDebug.LogWarning("No hay jugador con balón para abrir el menú de tiro.");
             }
         }
-
-     
         if (Input.GetMouseButtonDown(0))
         {
-      
-            // 🚨 Si el click está sobre UI, salimos y no procesamos raycast 
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) { return; }
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                return;
 
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
             if (Physics.Raycast(ray, out hit))
             {
-                // ⬛ Si haces clic en un tile (suelo)
-                if (hit.transform.CompareTag("Tile"))
-                {
-                    if (unitSelected)
-                    {
-                        Vector2Int targetCords = hit.transform.GetComponent<Tile>().cords;
-                        Vector2Int startCords = new Vector2Int(
-                            (int)selectedUnit.transform.position.x,
-                            (int)selectedUnit.transform.position.z
-                        ) / gridManager.UnityGridSize;
-                        RecalculatePath(startCords, targetCords, selectedUnit);
-
-                        // RecalculatePath(true);
-                    }
-                }
-
-                // ⬛ Si haces clic en un jugador (Unit)
-                else if (hit.transform.CompareTag("Unit"))
+                // 🧍 UNITS (físico)
+                if (hit.transform.CompareTag("Unit"))
                 {
                     Transform clickedUnit = hit.transform;
-                    
+
                     if (isPassing)
                     {
-
-                        // Modo pase activo
                         if (clickedUnit != passSource)
                         {
-                            PlayerActionQueue passerAccion = passSource.GetComponent<PlayerActionQueue>();
                             UnitController receiverID = clickedUnit.GetComponent<UnitController>();
-                             PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
-                            MyDebug.Log($"{passSource.GetComponent<PlayerActionQueue>().playerID} pasara a. {receiverID.GetComponent<PlayerActionQueue>().playerID}");
+
+                            PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
 
                             receiverID.HighlightSelection(Color.cyan);
-                           
 
-                            
                             isPassing = false;
                             passSource = null;
                         }
@@ -127,10 +103,95 @@ public class GameInputManager : MonoBehaviour
                     {
                         TrySelectUnit(clickedUnit);
                     }
-                }
 
+                    return; 
+                }
+            }
+
+            // 🟩 TILES (GRID - SIN Physics)
+            Plane plane = new Plane(Vector3.up, Vector3.zero);
+
+            if (plane.Raycast(ray, out float distance))
+            {
+                Vector3 worldPos = ray.GetPoint(distance);
+
+                Vector2Int coords = gridManager.GetCoordinatesFromPosition(worldPos);
+
+                Node node = gridManager.GetNode(coords);
+
+                if (node != null && unitSelected)
+                {
+                    Vector2Int startCords =
+                        gridManager.GetCoordinatesFromPosition(selectedUnit.position);
+
+                    RecalculatePath(startCords, coords, selectedUnit);
+                }
             }
         }
+     
+        // if (Input.GetMouseButtonDown(0))
+        // {
+      
+        //     // Si el click está sobre UI, salimos y no procesamos raycast 
+        //     if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) { return; }
+
+        //     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        //     RaycastHit hit;
+
+        //     if (Physics.Raycast(ray, out hit))
+        //     {
+        //         // ⬛ Si haces clic en un tile (suelo)
+        //         if (hit.transform.CompareTag("Tile"))
+        //         {
+        //             if (unitSelected)
+        //             {
+        //                 Vector2Int targetCords = hit.transform.GetComponent<Tile>().cords;
+        //                 Vector2Int startCords = new Vector2Int(
+        //                     (int)selectedUnit.transform.position.x,
+        //                     (int)selectedUnit.transform.position.z
+        //                 ) / gridManager.UnityGridSize;
+        //                 RecalculatePath(startCords, targetCords, selectedUnit);
+
+        //                 // RecalculatePath(true);
+        //             }
+        //         }
+
+        //         // ⬛ Si haces clic en un jugador (Unit)
+        //         else if (hit.transform.CompareTag("Unit"))
+        //         {
+        //             Transform clickedUnit = hit.transform;
+                    
+        //             if (isPassing)
+        //             {
+
+        //                 // Modo pase activo
+        //                 if (clickedUnit != passSource)
+        //                 {
+        //                     PlayerActionQueue passerAccion = passSource.GetComponent<PlayerActionQueue>();
+        //                     UnitController receiverID = clickedUnit.GetComponent<UnitController>();
+        //                      PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
+        //                     MyDebug.Log($"{passSource.GetComponent<PlayerActionQueue>().playerID} pasara a. {receiverID.GetComponent<PlayerActionQueue>().playerID}");
+
+        //                     receiverID.HighlightSelection(Color.cyan);
+                           
+
+                            
+        //                     isPassing = false;
+        //                     passSource = null;
+        //                 }
+        //                 else
+        //                 {
+        //                     MyDebug.Log("No puedes pasarte el balón a ti mismo.");
+        //                 }
+        //             }
+        //             else
+        //             {
+        //                 TrySelectUnit(clickedUnit);
+        //             }
+        //         }
+
+        //     }
+        // }
 
     }
 

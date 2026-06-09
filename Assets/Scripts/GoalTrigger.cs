@@ -9,8 +9,8 @@ public class GoalTrigger : MonoBehaviour
         var team = GetComponentInParent<Goal>();
         if (team != null)
         {
-            MyDebug.Log($"¡Gol al equipo {team.teamID}!");
-            TurnManager.Instance.OnGoalScored(team.teamID);
+            MyDebug.Log($"¡Gol al equipo {team.TeamID}!");
+            TurnManager.Instance.OnGoalScored(team.TeamID);
         }
         else
         {
