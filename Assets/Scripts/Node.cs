@@ -9,6 +9,8 @@ public class Node
     public bool explored;
     public bool path;
     public Node connectTo;
+    public bool inRange;
+     public Labeller tile;
 
     public Node(Vector2Int cords, bool walkable)
     {

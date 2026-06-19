@@ -66,6 +66,7 @@ public class GameInputManager : MonoBehaviour
                 MyDebug.LogWarning("No hay jugador con balón para abrir el menú de tiro.");
             }
         }
+        
         if (Input.GetMouseButtonDown(0))
         {
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
@@ -108,7 +109,7 @@ public class GameInputManager : MonoBehaviour
                 }
             }
 
-            // 🟩 TILES (GRID - SIN Physics)
+            //  TILES (GRID - SIN Physics)
             Plane plane = new Plane(Vector3.up, Vector3.zero);
 
             if (plane.Raycast(ray, out float distance))
@@ -129,69 +130,6 @@ public class GameInputManager : MonoBehaviour
             }
         }
      
-        // if (Input.GetMouseButtonDown(0))
-        // {
-      
-        //     // Si el click está sobre UI, salimos y no procesamos raycast 
-        //     if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) { return; }
-
-        //     Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        //     RaycastHit hit;
-
-        //     if (Physics.Raycast(ray, out hit))
-        //     {
-        //         // ⬛ Si haces clic en un tile (suelo)
-        //         if (hit.transform.CompareTag("Tile"))
-        //         {
-        //             if (unitSelected)
-        //             {
-        //                 Vector2Int targetCords = hit.transform.GetComponent<Tile>().cords;
-        //                 Vector2Int startCords = new Vector2Int(
-        //                     (int)selectedUnit.transform.position.x,
-        //                     (int)selectedUnit.transform.position.z
-        //                 ) / gridManager.UnityGridSize;
-        //                 RecalculatePath(startCords, targetCords, selectedUnit);
-
-        //                 // RecalculatePath(true);
-        //             }
-        //         }
-
-        //         // ⬛ Si haces clic en un jugador (Unit)
-        //         else if (hit.transform.CompareTag("Unit"))
-        //         {
-        //             Transform clickedUnit = hit.transform;
-                    
-        //             if (isPassing)
-        //             {
-
-        //                 // Modo pase activo
-        //                 if (clickedUnit != passSource)
-        //                 {
-        //                     PlayerActionQueue passerAccion = passSource.GetComponent<PlayerActionQueue>();
-        //                     UnitController receiverID = clickedUnit.GetComponent<UnitController>();
-        //                      PassUI.Instance.OpenPassMenu(passSource, receiverID.transform);
-        //                     MyDebug.Log($"{passSource.GetComponent<PlayerActionQueue>().playerID} pasara a. {receiverID.GetComponent<PlayerActionQueue>().playerID}");
-
-        //                     receiverID.HighlightSelection(Color.cyan);
-                           
-
-                            
-        //                     isPassing = false;
-        //                     passSource = null;
-        //                 }
-        //                 else
-        //                 {
-        //                     MyDebug.Log("No puedes pasarte el balón a ti mismo.");
-        //                 }
-        //             }
-        //             else
-        //             {
-        //                 TrySelectUnit(clickedUnit);
-        //             }
-        //         }
-
-        //     }
-        // }
 
     }
 
@@ -201,6 +139,8 @@ public class GameInputManager : MonoBehaviour
         selectedUnit = unit;
         unitSelected = true;
         var unitController = unit.GetComponent<UnitController>();
+        MovementRangeManager.Instance.ShowRange(unit);
+         gridManager.RefreshTiles();
         if (unitController != null)
         {
             unitController.HighlightSelection(Color.green);
@@ -212,8 +152,21 @@ public class GameInputManager : MonoBehaviour
 
     public void RecalculatePath(Vector2Int startCords, Vector2Int targetCords, Transform player)
     {
+        Node targetNode = GridManager.Instance.GetNode(targetCords);
+
+    if (!targetNode.inRange)
+    {
+        MyDebug.Log("Casilla fuera de rango");
+        return;
+    }
         // Calcula el nuevo camino desde start a target
         List<Node> path = pathFinder.GetNewPath(startCords, targetCords);
+        
+        if (path.Count - 1 > 5)
+        {
+            MyDebug.Log("Movimiento demasiado largo");
+            return;
+        }
 
         // Obtiene el componente PlayerActionQueue del jugador
         PlayerActionQueue actionQueue = player.GetComponent<PlayerActionQueue>();

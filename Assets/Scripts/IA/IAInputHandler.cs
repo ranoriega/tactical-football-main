@@ -108,15 +108,7 @@ public UnitController GetBestPassingOption()
         return -999; // descartado
     }
 
-    public void PassTo(UnitController teammate)
-    {
-        var player = BallManager.Instance.GetCurrentBallHolder()?.GetComponent<PlayerActionQueue>();
-        if (player != null)
-        {
-            // En lugar de pasar directamente → se guarda en la cola
-            player.QueuePass(teammate.transform);
-        }
-    }
+ 
 
 
 public void MoveTowardsOpponentGoal()

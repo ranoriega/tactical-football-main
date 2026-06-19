@@ -69,23 +69,6 @@ public class PlayerActionQueue : MonoBehaviour
     }
 
   
-    public void RegisterShot(Transform shooter, Vector3 trayectoryShot, Transform goalcenter)
-    {
-        if (shooter == null)
-        {
-            MyDebug.LogWarning("RegisterShot: shooter es null, no se guarda el tiro.");
-            return;
-        }
-        int shooterID = shooter.GetComponent<PlayerTeam>().teamID;
-
-        pendingShot = new ShotIntent
-        {
-            shooter = shooter,
-            goalCenter =goalcenter,
-            offset = trayectoryShot
-
-        };
-    }
 
       public Transform GetOpponentGoal(int shooterID)
     {           
@@ -99,17 +82,7 @@ public class PlayerActionQueue : MonoBehaviour
     
     }
 
-    public void QueuePass(Transform receiver)
-    {
-        if (receiver == null) return;
-
-        // Guardar la acción de pase en la cola
-        passQueueTwo.Enqueue(receiver.transform);
-
-         MyDebug.Log($"{playerID} programó un pase hacia {receiver.GetComponent<PlayerActionQueue>().playerID}");
-    }
-
-
+  
 
     public List<Node> getMoveTarget()
     {

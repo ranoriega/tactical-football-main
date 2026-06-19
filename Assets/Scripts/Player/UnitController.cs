@@ -7,12 +7,12 @@ using UnityEngine;
 
 public class UnitController : MonoBehaviour
 {
-      public GameRulesSystem conflictSystem;
+    
     private Renderer rend;
 
     public GameObject kickWavePrefab;
     Animator animator;
-     private Coroutine moveRoutine;
+private static HashSet<string> alreadyCollided = new HashSet<string>();     private Coroutine moveRoutine;
     List<Node> path = new List<Node>();
     public Vector3 initialPosition;  // posición de spawn original
      GridManager gridManager;
@@ -81,7 +81,7 @@ public class UnitController : MonoBehaviour
         unit.DOKill(); // Esto detiene cualquier movimiento DOTween en ese transform
 
         // 🔹 Llama al nuevo método DOTween para recorrer el path
-        float totalTime = 0.3f * path.Count; // ajusta según velocidad deseada
+        float totalTime = 0.4f * path.Count; // ajusta según velocidad deseada
         FollowPathDOTween(unit, path, totalTime, onFinish);
     }
 
@@ -105,6 +105,7 @@ public class UnitController : MonoBehaviour
 
     public void FollowPathDOTween(Transform unit, List<Node> path, float totalTime, Action onComplete)
     {
+        
         if (path == null || path.Count < 2)
         {
             onComplete?.Invoke();
@@ -128,11 +129,13 @@ public class UnitController : MonoBehaviour
             pos.y = 0.5f; // altura del jugador
             positions[i] = pos;
         }
-
+        
+     alreadyCollided.Clear();
         // DOTween: mueve al jugador a lo largo del path completo
         unit.DOPath(positions, totalTime,PathType.CatmullRom)
-            .SetEase(Ease.Linear)   // movimiento uniforme, sin aceleración extra
-            .SetLookAt(0.01f)       // rota el jugador suavemente hacia la dirección de movimiento
+            .SetEase(Ease.OutQuad)   // movimiento uniforme, sin aceleración extra
+            .SetLookAt(0.01f)  // rota el jugador suavemente hacia la dirección de movimiento
+             .OnUpdate(() =>CheckForRunningCollision(unit))     
             .OnComplete(() =>
             { 
                 // 🔥 DESACTIVA ANIMACIÓN AL TERMINAR
@@ -146,14 +149,51 @@ public class UnitController : MonoBehaviour
                 if (endNode != null)
                     endNode.walkable = false;
 
-                CheckForTileConflict(unit);
-                // ✅ Chequea robos de balón
-                CheckForBallStealAfterMove(unit);
+               
+              CheckForTileConflict(unit);
+    
+                // // ✅ Chequea robos de balón
+                // CheckForBallStealAfterMove(unit);
 
                 // ✅ Notifica que terminó
                 onComplete?.Invoke();
             });
     }
+
+private void CheckForRunningCollision(Transform movingUnit)
+{
+    foreach (var other in TurnManager.Instance.allUnits)
+    {
+        if (other.transform == movingUnit)
+            continue;
+
+        // ❗ distancia real en mundo
+        float distance = Vector3.Distance(movingUnit.position, other.transform.position);
+
+        // umbral de choque (ajústalo)
+        if (distance > 0.5f)
+            continue;
+  
+      string key =
+    movingUnit.GetEntityId() < other.transform.GetEntityId()
+    ? $"{movingUnit.GetEntityId()}-{other.transform.GetEntityId()}"
+    : $"{other.transform.GetEntityId()}-{movingUnit.GetEntityId()}";
+
+if (alreadyCollided.Contains(key))
+    continue;
+
+alreadyCollided.Add(key);
+        // solo si hay balón involucrado
+        Transform holder = BallManager.Instance.currentHolder;
+
+        if (holder != movingUnit && holder != other.transform)
+            return;
+
+        EventQueueSystem.Instance.Enqueue(
+            new BallDuelEvent(movingUnit, other.transform)
+        );
+    }
+}
     private void CheckForTileConflict(Transform movedUnit)
 {
     Vector2Int movedCoords =
@@ -172,16 +212,20 @@ public class UnitController : MonoBehaviour
 
         Transform holder = BallManager.Instance.currentHolder;
 
-        bool someoneHasBall =
-            holder == movedUnit ||
-            holder == unit.transform;
+        // SOLO si el que se mueve o el otro tiene el balón
+        if (holder != movedUnit && holder != unit.transform)
+            return;
 
-        if (!someoneHasBall)
-            continue;
-       MyDebug.Log(
-    $"Conflicto detectado: {movedUnit.name} vs {unit.name}"
-);
-      conflictSystem.ResolveTileConflict(movedUnit, unit.transform);
+        // SOLO el holder genera el evento
+        if (movedUnit != holder)
+            return;
+            
+            MyDebug.Log(
+            $"Conflicto detectado: {movedUnit.name} vs {unit.name}"
+        );
+            EventQueueSystem.Instance.Enqueue(
+            new BallDuelEvent(movedUnit, unit.transform)
+        );
         return;
     }
 }
@@ -201,7 +245,13 @@ public class UnitController : MonoBehaviour
     
     Vector3 direction = _targetPlayer.position - transform.position;
     direction.y = 0f; // importante: solo giro horizontal
-
+ 
+     if (BallManager.Instance.currentHolder != transform)
+    {
+        MyDebug.Log("Pase cancelado: ya no tiene el balón");
+        onComplete?.Invoke();
+        return;
+    }
     if (direction != Vector3.zero)
     {
         Quaternion lookRotation = Quaternion.LookRotation(direction);

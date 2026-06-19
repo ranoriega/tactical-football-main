@@ -14,15 +14,22 @@ public class FieldGenerator : MonoBehaviour, IGameSystem
         GenerateField();
         OnReady?.Invoke(); // Avisamos que ya terminamos
     }
-
-    void GenerateField()
+void GenerateField()
+{
+    foreach (var kvp in gridManager.Grid)
     {
-        foreach (var kvp in gridManager.Grid)
-        {
-            Vector2Int cords = kvp.Key;
-            Vector3 spawnPos = gridManager.GetPositionFromCoordinates(cords);
-            Instantiate(tilePrefab, spawnPos, Quaternion.identity);
-        }
+        Vector2Int cords = kvp.Key;
+        Vector3 spawnPos = gridManager.GetPositionFromCoordinates(cords);
+
+        GameObject tileObj = Instantiate(tilePrefab, spawnPos, Quaternion.identity);
+
+        Labeller labeller = tileObj.GetComponent<Labeller>();
+
+        Node node = kvp.Value;
+
+        labeller.cords = cords;
+        node.tile = labeller;
     }
+}
 
 }

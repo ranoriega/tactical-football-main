@@ -13,6 +13,7 @@ public class TurnManager : MonoBehaviour
     [SerializeField] GridManager gridManager;
     public UnitController centerPlayerHuman;
     public UnitController centerPlayerAI;
+    Labeller lastLabeller;
 
     
     public List<UnitController> allUnits = new List<UnitController>();
@@ -99,6 +100,9 @@ public class TurnManager : MonoBehaviour
 
     public void ExecuteTurn()
     {
+      
+   
+   
           movesRemaining = 0;
 
         foreach (var unit in allUnits)
@@ -148,22 +152,7 @@ public class TurnManager : MonoBehaviour
     }
    
 
-
-    // public void ExecuteShot()
-    // {
-         
-    //     PlayerActionQueue player = BallManager.Instance.currentHolder.GetComponent<PlayerActionQueue>();
-       
-      
-    //     if (player.pendingShot != null && player.pendingShot.shooter != null && player.pendingShot.goalCenter != null)
-    //     {
-    //         StartCoroutine(BallManager.Instance.AnimateBallShot(player.pendingShot.shooter, player.pendingShot.goalCenter, player.pendingShot.offset));
-    //     }
-    //     player.pendingShot = null;
-    // }
   
-  
-
  
     public void OnGoalScored(int teamID)
     {
@@ -228,6 +217,7 @@ public class TurnManager : MonoBehaviour
       
         movementQueueIA.Clear();
         selectedPlayers.Clear();
+     
         StartNewTurn();
     }
 }

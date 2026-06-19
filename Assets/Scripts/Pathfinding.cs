@@ -118,6 +118,55 @@ List<Node> BuildPathFrom(Node endNode)
         }
     }
 
+   public List<Node> GetReachableArea(Vector2Int startCoordinates, int range)
+{
+    Node startNode = grid[startCoordinates];
+
+    Queue<(Node node, int dist)> frontier = new Queue<(Node, int)>();
+    HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+    List<Node> result = new List<Node>();
+
+    frontier.Enqueue((startNode, 0));
+    visited.Add(startCoordinates);
+
+    while (frontier.Count > 0)
+    {
+        var current = frontier.Dequeue();
+        Node node = current.node;
+        int dist = current.dist;
+
+        // no incluir el nodo inicial
+        if (dist > 0)
+        {
+            result.Add(node);
+            node.inRange = true; // <- para pintar en azul
+        }
+
+        if (dist >= range)
+            continue;
+
+        foreach (Vector2Int dir in searchOrder)
+        {
+            Vector2Int nextPos = node.cords + dir;
+
+            if (!grid.ContainsKey(nextPos))
+                continue;
+
+            if (visited.Contains(nextPos))
+                continue;
+
+            Node nextNode = grid[nextPos];
+
+            if (!nextNode.walkable)
+                continue;
+
+            visited.Add(nextPos);
+            frontier.Enqueue((nextNode, dist + 1));
+        }
+    }
+
+    return result;
+}
     List<Node> BuildPath()
     {
         List<Node> path = new List<Node>();

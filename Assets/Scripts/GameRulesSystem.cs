@@ -3,13 +3,13 @@ using UnityEngine;
 
 public class GameRulesSystem : MonoBehaviour
 {
-    private HashSet<string> processedConflicts = new HashSet<string>();
-    string GetKey(Transform a, Transform b)
+    public static GameRulesSystem Instance;
+
+    private void Awake()
 {
-    return a.name.CompareTo(b.name) < 0
-        ? a.name + "_" + b.name
-        : b.name + "_" + a.name;
+    Instance = this;
 }
+     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -19,33 +19,54 @@ public class GameRulesSystem : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
+  
     }
-   public void ResolveTileConflict(Transform a, Transform b)
+ public void ResolveTileConflict(Transform a, Transform b)
 {
+    Transform holder = BallManager.Instance.currentHolder;
+
+    bool aHasBall = holder == a;
+    bool bHasBall = holder == b;
+
+    // ❌ nadie tiene balón → no hay duelo
+    if (!aHasBall && !bHasBall)
+    {
+        MyDebug.Log($"Colisión sin balón: {a.name} vs {b.name}");
+        return;
+    }
+
+    // 🔥 hay balón → duelo
     ResolveBallDuel(a, b);
 }
- public void ResolveBallDuel(Transform a, Transform b)
+public void ResolveBallDuel(Transform a, Transform b)
 {
-    string key = GetKey(a, b);
+    Transform holder = BallManager.Instance.currentHolder;
 
-    if (processedConflicts.Contains(key))
+    // Seguridad por si nadie tiene el balón
+    if (holder == null)
         return;
 
-    processedConflicts.Add(key);
-
-    Transform holder = BallManager.Instance.currentHolder;
+    // Seguridad por si ninguno de los dos tiene el balón
+    if (holder != a && holder != b)
+        return;
 
     Transform attacker = holder;
     Transform defender = holder == a ? b : a;
 
-    float attackerScore = Random.value;
-    float defenderScore = Random.value;
+    float attackerScore =1;
+    float defenderScore = 2;
 
-    Transform winner = attackerScore > defenderScore ? attacker : defender;
+    Transform winner = attackerScore > defenderScore
+        ? attacker
+        : defender;
 
     BallManager.Instance.GiveBallTo(winner);
 
-    MyDebug.Log($"Duelo: {attacker.name} vs {defender.name} → gana {winner.name}");
+    MyDebug.Log(
+        $"Duelo: {attacker.name} vs {defender.name} → gana {winner.name}"
+    );
 }
+
+
 }

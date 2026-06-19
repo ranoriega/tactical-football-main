@@ -26,7 +26,7 @@ public class AttackState : IState
         if (teammate != null)
         {
             MyDebug.Log(" decide pasar a " + teammate.GetComponent<PlayerActionQueue>().playerID);
-            ai.PassTo(teammate);
+           
             return;
         }
           // 3. Si no puede ni tirar ni pasar → avanza hacia el arco rival

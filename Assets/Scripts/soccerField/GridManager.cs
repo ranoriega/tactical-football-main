@@ -48,7 +48,9 @@ public static GridManager Instance { get; private set; }
             entry.Value.connectTo = null;
             entry.Value.explored = false;
             entry.Value.path = false;
+            entry.Value.inRange = false;
         }
+       
     }
 
     public Vector2Int GetCoordinatesFromPosition(Vector3 position)
@@ -70,6 +72,13 @@ public static GridManager Instance { get; private set; }
 
         return position;
     }
+    public void RefreshTiles()
+{
+    foreach(Node node in Grid.Values)
+    {
+        node.tile.Refresh();
+    }
+}
     private void CreateGrid()
     {
         for (int x = 0; x < gridSize.x; x++)

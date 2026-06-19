@@ -10,12 +10,15 @@ public class Labeller : MonoBehaviour
     Color originalColor;
 
     public TextMeshPro label;
+    [SerializeField]private Renderer rangeSprite;
     public Vector2Int cords = new Vector2Int();
     GridManager gridManager;
 
     [SerializeField] Color defaultColor = Color.white;
     [SerializeField] Color blockedColor = Color.red;
     [SerializeField] Color exploredColor = Color.yellow;
+    [SerializeField] Color rangeColor = Color.blue;
+
     [SerializeField] Color pathColor = new Color(1f, 0.5f, 0f);
 
     private void Awake()
@@ -28,29 +31,40 @@ public class Labeller : MonoBehaviour
 
         gridManager = FindAnyObjectByType<GridManager>();
         label = GetComponentInChildren<TextMeshPro>();
-        label.enabled = false;
+        
         DisplayCords();
+           
+         if (!Application.isPlaying)
+    {
+        label.enabled = true;
     }
+    }
+
+private void OnEnable()
+{
+    
+    if (rangeSprite != null)
+        rangeSprite.enabled = false;
+
+    if (label != null)
+        label.enabled = false;
+        
+}
 
     void Start()
     {
-         label.enabled = !label.IsActive();
+     
     }
 
     private void Update()
     {
-        if (!Application.isPlaying)
-        {
 
-            label.enabled = true;
-        }
-
+    
 
         DisplayCords();
         transform.name = cords.ToString();
-
         ToggleLables();
-        SetLabelColor();
+    
     }
 
     public void Highlight()
@@ -65,31 +79,22 @@ public class Labeller : MonoBehaviour
             tileRenderer.material.color = originalColor;
     }
 
-    void SetLabelColor()
-    {
-        if (gridManager == null) { return; }
+   public void Refresh()
+{
+    Node node = gridManager.GetNode(cords);
+    if (node == null) return;
 
-        Node node = gridManager.GetNode(cords);
+    if (!node.walkable)
+        label.color = blockedColor;
+    else if (node.path)
+        label.color = pathColor;
+    else if (node.explored)
+        label.color = exploredColor;
+    else
+        label.color = defaultColor;
 
-        if (node == null) { return; }
-
-        if (!node.walkable)
-        {
-            label.color = blockedColor;
-        }
-        else if (node.path)
-        {
-            label.color = pathColor;
-        }
-        else if (node.explored)
-        {
-            label.color = exploredColor;
-        }
-        else
-        {
-            label.color = defaultColor;
-        }
-    }
+    rangeSprite.enabled = node.inRange;
+}
 
     private void DisplayCords()
     {
