@@ -8,3 +8,5 @@ Juego de fútbol táctico desarrollado en Unity.
 - Sistema de pases
 - Movimiento por cuadrícula
 - Captura de posiciones
+
+- Assets/Image/gameplay2.png
